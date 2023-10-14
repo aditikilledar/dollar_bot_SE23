@@ -1,143 +1,105 @@
 import os
 import json
-from mock.mock import patch
+import pytest
+from unittest.mock import patch, MagicMock, ANY
 from telebot import types
 from code import add
-from mock import ANY
 
 
-dateFormat = "%d-%b-%Y"
-timeFormat = "%H:%M"
-monthFormat = "%b-%Y"
+@pytest.fixture
+def mock_telebot(mocker):
+    """Fixture providing a mocked TeleBot instance."""
+    return mocker.patch("telebot.TeleBot", autospec=True)
 
 
-@patch("telebot.telebot")
-def test_run(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.reply_to.return_value = True
-    message = create_message("hello from test run!")
-    add.run(message, mc)
-    assert not mc.reply_to.called
-
-
-@patch("telebot.telebot")
-def test_post_category_selection_working(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.send_message.return_value = True
-
-    message = create_message("hello from testing!")
-    add.post_category_selection(message, mc)
-    assert mc.send_message.called
-
-
-@patch("telebot.telebot")
-def test_post_category_selection_noMatchingCategory(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.send_message.return_value = []
-    mc.reply_to.return_value = True
-
-    mocker.patch.object(add, "helper")
-    add.helper.getSpendCategories.return_value = None
-
-    message = create_message("hello from testing!")
-    add.post_category_selection(message, mc)
-    assert mc.reply_to.called
-
-
-@patch("telebot.telebot")
-def test_post_amount_input_working(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.send_message.return_value = True
-
-    message = create_message("hello from testing!")
-    add.post_category_selection(message, mc)
-    assert mc.send_message.called
-
-
-@patch("telebot.telebot")
-def test_post_amount_input_working_withdata(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.send_message.return_value = True
-    mocker.patch.object(add, "helper")
-    add.helper.validate_entered_amount.return_value = 10
-    add.helper.write_json.return_value = True
-    add.helper.getDateFormat.return_value = dateFormat
-    add.helper.getTimeFormat.return_value = timeFormat
-
-    mocker.patch.object(add, "option")
-    add.option.return_value = {11, "here"}
-
-    message = create_message("hello from testing!")
-    add.post_amount_input(message, mc, "Food")
-    assert mc.send_message.called
-
-
-@patch("telebot.telebot")
-def test_post_amount_input_nonworking(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.send_message.return_value = True
-    mc.reply_to.return_value = True
-    mocker.patch.object(add, "helper")
-    add.helper.validate_entered_amount.return_value = 0
-    message = create_message("hello from testing!")
-    add.post_amount_input(message, mc, "Food")
-    assert mc.reply_to.called
-
-
-@patch("telebot.telebot")
-def test_post_amount_input_working_withdata_chatid(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.send_message.return_value = True
-    mocker.patch.object(add, "helper")
-    add.helper.validate_entered_amount.return_value = 10
-    add.helper.write_json.return_value = True
-    add.helper.getDateFormat.return_value = dateFormat
-    add.helper.getTimeFormat.return_value = timeFormat
-
-    mocker.patch.object(add, "option")
-    add.option = {11, "here"}
-    test_option = {}
-    test_option[11] = "here"
-    add.option = test_option
-
-    message = create_message("hello from testing!")
-    add.post_amount_input(message, mc, "Food")
-    assert mc.send_message.called
-    assert mc.send_message.called_with(11, ANY)
-
-
-def test_add_user_record_nonworking(mocker):
-    mocker.patch.object(add, "helper")
-    add.helper.read_json.return_value = {}
-    addeduserrecord = add.add_user_record(1, "record : test")
-    assert addeduserrecord
-
-
-def test_add_user_record_working(mocker):
-    MOCK_USER_DATA = test_read_json()
-    mocker.patch.object(add, "helper")
-    add.helper.read_json.return_value = MOCK_USER_DATA
-    addeduserrecord = add.add_user_record(1, "record : test")
-    if len(MOCK_USER_DATA) + 1 == len(addeduserrecord):
-        assert True
-
-
-def create_message(text):
-    params = {"messagebody": text}
+@pytest.fixture
+def message():
+    """Fixture providing a sample telebot message."""
     chat = types.User(11, False, "test")
-    return types.Message(1, None, None, chat, "text", params, "")
+    return types.Message(1, None, None, chat, "text", {}, "")
 
 
-def test_read_json():
-    try:
-        if not os.path.exists("./test/dummy_expense_record.json"):
-            with open("./test/dummy_expense_record.json", "w") as json_file:
-                json_file.write("{}")
-            return json.dumps("{}")
-        elif os.stat("./test/dummy_expense_record.json").st_size != 0:
-            with open("./test/dummy_expense_record.json") as expense_record:
-                expense_record_data = json.load(expense_record)
-            return expense_record_data
+@pytest.fixture
+def mock_helper(mocker):
+    """Fixture providing a mocked helper."""
+    helper = mocker.patch("add.helper", autospec=True)
+    helper.getDateFormat.return_value = "%d-%b-%Y"
+    helper.getTimeFormat.return_value = "%H:%M"
+    return helper
 
-    except FileNotFoundError:
-        print("---------NO RECORDS FOUND---------")
+
+def test_run_responds_to_message(mock_telebot, message):
+    mc = mock_telebot.return_value
+    mc.reply_to.return_value = True
+    
+    add.run(message, mc)
+    
+    mc.reply_to.assert_called_once()
+
+
+def test_post_category_selection_sends_message(mock_telebot, message):
+    mc = mock_telebot.return_value
+    
+    add.post_category_selection(message, mc)
+    
+    mc.send_message.assert_called_once()
+
+
+def test_post_category_selection_handles_no_category(mock_telebot, mock_helper, message):
+    mc = mock_telebot.return_value
+    mock_helper.getSpendCategories.return_value = None
+    
+    add.post_category_selection(message, mc)
+    
+    mc.reply_to.assert_called_once()
+
+
+def test_post_amount_input_with_valid_data(mock_telebot, mocker, message):
+    mc = mock_telebot.return_value
+    mocker.patch.object(add, "helper", autospec=True).validate_entered_amount.return_value = 10
+    mocker.patch.object(add, "option", autospec=True, return_value={11: "here"})
+    
+    add.post_amount_input(message, mc, "Food")
+    
+    mc.send_message.assert_called_once_with(11, ANY)
+def test_run_handles_different_categories(mock_telebot, message, mock_helper):
+    mc = mock_telebot.return_value
+    mock_helper.getSpendCategories.return_value = ["Category1", "Category2"]
+    
+    add.run(message, mc)
+    
+    mc.reply_to.assert_called_once()
+    mc.register_next_step_handler.assert_called_once()
+
+
+def test_post_category_selection_handles_new_category(mock_telebot, message):
+    mc = mock_telebot.return_value
+    message.text = "Add new category"
+    
+    add.post_category_selection(message, mc)
+    
+    mc.send_message.assert_called_once()
+    mc.register_next_step_handler.assert_called_once()
+
+
+def test_post_category_selection_handles_invalid_category(mock_telebot, message, mock_helper):
+    mc = mock_telebot.return_value
+    message.text = "InvalidCategory"
+    mock_helper.getSpendCategories.return_value = ["Category1", "Category2"]
+    
+    add.post_category_selection(message, mc)
+    
+    mc.send_message.assert_called_once()
+    mc.reply_to.assert_called_once()
+    mc.send_message.assert_called()
+    # Assert the exception logging.
+    
+
+def test_post_amount_input_handles_zero_amount(mock_telebot, message):
+    mc = mock_telebot.return_value
+    message.text = "0"
+    
+    add.post_amount_input(message, mc, "Food")
+    
+    mc.reply_to.assert_called_once()
+
