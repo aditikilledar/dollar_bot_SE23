@@ -3,7 +3,7 @@ import json
 import pytest
 from unittest.mock import patch, MagicMock, ANY
 from telebot import types
-from code import add
+
 
 
 @pytest.fixture
@@ -92,7 +92,7 @@ def test_post_category_selection_handles_invalid_category(mock_telebot, message,
     mc.send_message.assert_called_once()
     mc.reply_to.assert_called_once()
     mc.send_message.assert_called()
-    # Assert the exception logging.
+   
     
 
 def test_post_amount_input_handles_zero_amount(mock_telebot, message):
