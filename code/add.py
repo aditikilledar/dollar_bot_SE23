@@ -21,11 +21,16 @@ def run(message, bot):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
     markup.row_width = 2
     chat_id = message.chat.id
-    for c in helper.getSpendCategories():
-        markup.add(c)
-    markup.add("Add new category")
-    msg = bot.reply_to(message, "Select Category", reply_markup=markup)
-    bot.register_next_step_handler(msg, post_category_selection, bot)
+    expense_history = helper.getUserHistory(chat_id)
+    if expense_history:
+        recur_msg = bot.send_message(chat_id,"You have previously recorded expenses. Do you want to repeat one of these expenses?(Y/N)")
+        bot.register_next_step_handler(recur_msg, record_expense, bot, expense_history)
+    else:
+        for c in helper.getSpendCategories():
+            markup.add(c)
+        markup.add("Add new category")
+        msg = bot.reply_to(message, "Select Category", reply_markup=markup)
+        bot.register_next_step_handler(msg, post_category_selection, bot)
 
 
 def post_append_spend(message, bot):
@@ -68,18 +73,13 @@ def post_category_selection(message, bot):
                 )
 
             option[chat_id] = selected_category
-            expense_history = helper.getUserHistoryByCategory(chat_id,selected_category)
-            if expense_history:
-                recur_msg = bot.send_message(chat_id,"You have previously recorded expenses in this category. Do you want to repeat one of these expenses?(Y/N)")
-                bot.register_next_step_handler(recur_msg, record_expense, bot, expense_history)
-            else:
-                message = bot.send_message(
+            message = bot.send_message(
                 chat_id,
                 "How much did you spend on {}? \n(Numeric values only)".format(
                     str(option[chat_id])
                 ),
-            )
-                bot.register_next_step_handler(message, post_amount_input, bot, selected_category)
+                )
+            bot.register_next_step_handler(message, post_amount_input, bot, selected_category)
     except Exception as e:
         logging.exception(str(e))
         bot.reply_to(message, "Oh no! " + str(e))
@@ -96,29 +96,25 @@ def post_category_selection(message, bot):
         bot.send_message(chat_id, display_text)
 
 
-def record_expense(message, bot, previous_expenses=None, category=None):
+def record_expense(message, bot, previous_expenses):
     print("In function to record expense")
     chat_id = message.chat.id
     selection = message.text
     print(selection)
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    markup.row_width = 2
+    chat_id = message.chat.id
     if selection == "Y" or selection == "y":
-        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-        markup.row_width = 2
-        chat_id = message.chat.id
         for record in previous_expenses:
             markup.add(record)
         msg = bot.reply_to(message, "Select the expense you want to repeat", reply_markup=markup)
         bot.register_next_step_handler(msg, post_expense_selection, bot)
     else:
-        message = bot.send_message(
-            chat_id,
-            "How much did you spend on {}? \n(Numeric values only)".format(
-                str(option[chat_id])
-            ),
-        )
-        bot.register_next_step_handler(
-            message, post_amount_input, bot, category
-        )
+        for c in helper.getSpendCategories():
+            markup.add(c)
+        markup.add("Add new category")
+        msg = bot.reply_to(message, "Select Category", reply_markup=markup)
+        bot.register_next_step_handler(msg, post_category_selection, bot)
 
 def post_expense_selection(message,bot):
     chat_id = message.chat.id
