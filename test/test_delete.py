@@ -1,53 +1,61 @@
-import os
-import json
-from code import delete
-from mock import patch
-from telebot import types
+import unittest
+from unittest.mock import Mock, patch
+import delete
 
+class TestDelete(unittest.TestCase):
 
-def test_read_json():
-    try:
-        if not os.path.exists("./test/dummy_expense_record.json"):
-            with open("./test/dummy_expense_record.json", "w") as json_file:
-                json_file.write("{}")
-            return json.dumps("{}")
-        elif os.stat("./test/dummy_expense_record.json").st_size != 0:
-            with open("./test/dummy_expense_record.json") as expense_record:
-                expense_record_data = json.load(expense_record)
-            return expense_record_data
+    @patch('delete.helper.read_json')
+    @patch('delete.helper.write_json')
+    @patch('delete.bot.send_message')
+    def test_run_with_history(self, mock_send_message, mock_write_json, mock_read_json):
+       
+        message = Mock()
+        message.chat.id = 1
+        bot = Mock()
+      
+        mock_read_json.return_value = {
+            "1": {"data": [{"amount": 100}], "budget": {"overall": 1000, "category": None}}
+        }
 
-    except FileNotFoundError:
-        print("---------NO RECORDS FOUND---------")
+        
+        delete.run(message, bot)
 
+      
+        mock_read_json.assert_called_once()
+        mock_write_json.assert_called_once()
+        mock_send_message.assert_called_once_with(1, "History has been deleted!")
 
-def create_message(text):
-    params = {"messagebody": text}
-    chat = types.User("894127939", False, "test")
-    return types.Message(1, None, None, chat, "text", params, "")
+    @patch('delete.helper.read_json')
+    @patch('delete.bot.send_message')
+    def test_run_without_history(self, mock_send_message, mock_read_json):
+       
+        message = Mock()
+        message.chat.id = 1
+        bot = Mock()
+        
+    
+        mock_read_json.return_value = {}
 
+        delete.run(message, bot)
 
-@patch("telebot.telebot")
-def test_delete_run_with_data(mock_telebot, mocker):
-    MOCK_USER_DATA = test_read_json()
-    mocker.patch.object(delete, "helper")
-    delete.helper.read_json.return_value = MOCK_USER_DATA
-    print("Hello", MOCK_USER_DATA)
-    delete.helper.write_json.return_value = True
-    MOCK_Message_data = create_message("Hello")
-    mc = mock_telebot.return_value
-    mc.send_message.return_value = True
-    delete.run(MOCK_Message_data, mc)
-    assert delete.helper.write_json.called
+  
+        mock_read_json.assert_called_once()
+        mock_send_message.assert_called_once_with(1, "No records there to be deleted. Start adding your expenses to keep track of your spendings!")
 
+    @patch('delete.helper.read_json')
+    def test_deleteHistory(self, mock_read_json):
+     
+        mock_read_json.return_value = {
+            "1": {"data": [{"amount": 100}], "budget": {"overall": 1000, "category": None}}
+        }
 
-@patch("telebot.telebot")
-def test_delete_with_no_data(mock_telebot, mocker):
-    mocker.patch.object(delete, "helper")
-    delete.helper.read_json.return_value = {}
-    delete.helper.write_json.return_value = True
-    MOCK_Message_data = create_message("Hello")
-    mc = mock_telebot.return_value
-    mc.send_message.return_value = True
-    delete.run(MOCK_Message_data, mc)
-    if delete.helper.write_json.called is False:
-        assert True
+      
+        updated_user_list = delete.deleteHistory("1")
+
+    
+        self.assertEqual(updated_user_list["1"]["data"], [])
+        self.assertIsNone(updated_user_list["1"]["budget"]["overall"])
+        self.assertIsNone(updated_user_list["1"]["budget"]["category"])
+
+if __name__ == "__main__":
+    unittest.main()
