@@ -1,131 +1,132 @@
-import os
-import json
-from mock import patch
-from telebot import types
-from code import display
+import unittest
+from unittest.mock import Mock, patch
+import display  
 
+class TestDisplayModule(unittest.TestCase):
 
-@patch("telebot.telebot")
-def test_run(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.reply_to.return_value = True
-    message = create_message("hello from test run!")
-    display.run(message, mc)
-    assert mc.send_message.called
+    @patch('display.helper')
+    @patch('display.types.ReplyKeyboardMarkup')
+    def test_run_with_no_history(self, MockReplyKeyboardMarkup, MockHelper):
+        # Create mock objects
+        message = Mock()
+        message.chat.id = 123
+        bot = Mock()
 
+        MockHelper.getUserHistory.return_value = None
 
-@patch("telebot.telebot")
-def test_no_data_available(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.reply_to.return_value = True
-    message = create_message("/spendings")
-    display.run(message, mc)
-    assert mc.send_message.called
+        # Run the function under test
+        display.run(message, bot)
 
+        # Check the result
+        bot.send_message.assert_called_once_with(
+            123, "Oops! Looks like you do not have any spending records!"
+        )
 
-@patch("telebot.telebot")
-def test_invalid_format(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.reply_to.return_value = True
-    message = create_message("luster")
-    try:
-        display.display_total(message, mc)
-        assert False
-    except Exception:
-        assert True
+    @patch('display.helper')
+    @patch('display.types.ReplyKeyboardMarkup')
+    @patch('display.bot.register_next_step_handler')
+    def test_run_with_history(self, MockRegister, MockReplyKeyboardMarkup, MockHelper):
+        # More detailed test setups here
+        ...
 
+    @patch('display.helper')
+    @patch('display.bot.send_message')
+    @patch('display.bot.reply_to')
+    @patch('display.logging')
+    def test_display_total_with_exception(self, MockLogging, MockReplyTo, MockSendMessage, MockHelper):
+        message = Mock()
+        message.chat.id = 123
+        message.text = 'NotValidOption'
+        bot = Mock()
 
-@patch("telebot.telebot")
-def test_valid_format(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.reply_to.return_value = True
-    message = create_message("Month")
-    try:
-        display.display_total(message, mc)
-        assert True
-    except Exception:
-        assert False
+        MockHelper.getSpendDisplayOptions.return_value = ['Day', 'Month']
 
+        # Run the function under test
+        display.display_total(message, bot)
 
-@patch("telebot.telebot")
-def test_valid_format_day(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.reply_to.return_value = True
-    message = create_message("Day")
-    try:
-        display.display_total(message, mc)
-        assert True
-    except Exception:
-        assert False
+        # Check the results
+        MockLogging.exception.assert_called_once()
+        MockReplyTo.assert_called_once()
 
+    @patch('display.calculate_spendings', return_value='Total: $100')
+    @patch('display.helper')
+    @patch('display.bot.send_message')
+    @patch('display.bot.send_chat_action')
+    @patch('display.bot.send_photo')
+    @patch('display.graphing.visualize')
+    @patch('display.datetime')
+    def test_display_total_valid_day(
+        self, MockDatetime, MockVisualize, MockSendPhoto, MockChatAction, MockSendMessage, MockHelper, MockCalculate
+    ):
+        # More detailed test setups here
+        ...
 
-@patch("telebot.telebot")
-def test_spending_run_working(mock_telebot, mocker):
+    def test_calculate_spendings(self):
+        # Example test
+        queryResult = ["2022-10-15,food,20", "2022-10-15,transport,10"]
+        expected_result = "food $20.0\ntransport $10.0\n"
 
-    MOCK_USER_DATA = test_read_json()
-    mocker.patch.object(display, "helper")
-    display.helper.getUserHistory.return_value = MOCK_USER_DATA["894127939"]
-    display.helper.getSpendDisplayOptions.return_value = ["Day", "Month"]
-    display.helper.getDateFormat.return_value = "%d-%b-%Y"
-    display.helper.getMonthFormat.return_value = "%b-%Y"
-    mc = mock_telebot.return_value
-    mc.reply_to.return_value = True
-    message = create_message("Day")
-    message.text = "Day"
-    display.run(message, mc)
-    assert not mc.send_message.called
+        result = display.calculate_spendings(queryResult)
 
+        self.assertEqual(result, expected_result)
 
-@patch("telebot.telebot")
-def test_spending_display_working(mock_telebot, mocker):
+    def test_run_with_history(self, MockReplyKeyboardMarkup, MockHelper):
+        message = Mock()
+        message.chat.id = 123
+        bot = Mock()
+        MockHelper.getUserHistory.return_value = ['2023-10-10,food,10']
 
-    MOCK_USER_DATA = test_read_json()
-    mocker.patch.object(display, "helper")
-    display.helper.getUserHistory.return_value = MOCK_USER_DATA["894127939"]
-    display.helper.getSpendDisplayOptions.return_value = ["Day", "Month"]
-    display.helper.getDateFormat.return_value = "%d-%b-%Y"
-    display.helper.getMonthFormat.return_value = "%b-%Y"
-    mc = mock_telebot.return_value
-    mc.reply_to.return_value = True
-    message = create_message("Day")
-    message.text = "Day"
-    display.display_total(message, mc)
-    assert mc.send_message.called
+        markup_instance = Mock()
+        MockReplyKeyboardMarkup.return_value = markup_instance
 
+        # Run the function under test
+        display.run(message, bot)
 
-@patch("telebot.telebot")
-def test_spending_display_month(mock_telebot, mocker):
+        # Check the result
+        markup_instance.add.assert_called()  # Add further checks here
+        bot.reply_to.assert_called_once()
+        bot.register_next_step_handler.assert_called_once_with(
+            bot.reply_to.return_value, display.display_total, bot
+        )
 
-    MOCK_USER_DATA = test_read_json()
-    mocker.patch.object(display, "helper")
-    display.helper.getUserHistory.return_value = MOCK_USER_DATA["894127939"]
-    display.helper.getSpendDisplayOptions.return_value = ["Day", "Month"]
-    display.helper.getDateFormat.return_value = "%d-%b-%Y"
-    display.helper.getMonthFormat.return_value = "%b-%Y"
-    mc = mock_telebot.return_value
-    mc.reply_to.return_value = True
-    message = create_message("Month")
-    message.text = "Month"
-    display.display_total(message, mc)
-    assert mc.send_message.called
+    @patch('display.calculate_spendings', return_value="food $20\n")
+    @patch('display.helper')
+    @patch('display.graphing')
+    def test_display_total_valid_month(self, MockGraphing, MockHelper, MockCalculate):
+        message = Mock()
+        message.chat.id = 123
+        message.text = 'Month'
+        bot = Mock()
 
+        MockHelper.getSpendDisplayOptions.return_value = ['Day', 'Month']
+        MockHelper.getUserHistory.return_value = [
+            '2023-10-10,food,10', '2023-10-11,food,10'
+        ]
 
-def create_message(text):
-    params = {"messagebody": text}
-    chat = types.User(11, False, "test")
-    return types.Message(894127939, None, None, chat, "text", params, "")
+        # Run the function under test
+        display.display_total(message, bot)
 
+        # Check the results
+        MockCalculate.assert_called_once()
+        MockGraphing.visualize.assert_called_once()
+        bot.send_photo.assert_called_once()
+        bot.send_message.assert_called_once_with(
+            123, "Here are your total spendings month:\nCATEGORIES,AMOUNT \n----------------------\nfood $20\n"
+        )
 
-def test_read_json():
-    try:
-        if not os.path.exists("./test/dummy_expense_record.json"):
-            with open("./test/dummy_expense_record.json", "w") as json_file:
-                json_file.write("{}")
-            return json.dumps("{}")
-        elif os.stat("./test/dummy_expense_record.json").st_size != 0:
-            with open("./test/dummy_expense_record.json") as expense_record:
-                expense_record_data = json.load(expense_record)
-            return expense_record_data
+   
+    def test_calculate_spendings_with_multiple_categories(self, MockHelper):
+        queryResult = [
+            '2023-10-10,food,10',
+            '2023-10-10,food,10',
+            '2023-10-11,transport,20'
+        ]
+        expected_result = "food $20.0\ntransport $20.0\n"
 
-    except FileNotFoundError:
-        print("---------NO RECORDS FOUND---------")
+        # Run the function under test
+        result = display.calculate_spendings(queryResult)
+
+        # Check the result
+        self.assertEqual(result, expected_result)
+if __name__ == '__main__':
+    unittest.main()
