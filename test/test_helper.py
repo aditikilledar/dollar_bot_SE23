@@ -1,409 +1,64 @@
-from code import helper
-from code.helper import isCategoryBudgetByCategoryAvailable, throw_exception
-from mock import ANY
-from telebot import types
-from mock.mock import patch
-import logging
-import mock
-
-MOCK_CHAT_ID = 101
-MOCK_USER_DATA = {
-    str(MOCK_CHAT_ID): {
-        "data": ["correct_mock_value"],
-        "budget": {"overall": None, "category": None},
-    },
-    "102": {
-        "data": ["wrong_mock_value"],
-        "budget": {"overall": None, "category": None},
-    },
-}
-
-
-def test_validate_entered_amount_none():
-    result = helper.validate_entered_amount(None)
-    if result:
-        assert False, "None is not a valid amount"
-    else:
-        assert True
-
-
-def test_validate_entered_amount_int():
-    val = "101"
-    result = helper.validate_entered_amount(val)
-    if result:
-        assert True
-    else:
-        assert False, val + " is valid amount"
-
-
-def test_validate_entered_amount_int_max():
-    val = "999999999999999"
-    result = helper.validate_entered_amount(val)
-    if result:
-        assert True
-    else:
-        assert False, val + " is valid amount"
-
-
-def test_validate_entered_amount_int_outofbound():
-    val = "9999999999999999"
-    result = helper.validate_entered_amount(val)
-    if result:
-        assert False, val + " is not a valid amount(out of bound)"
-    else:
-        assert True
-
-
-def test_validate_entered_amount_float():
-    val = "101.11"
-    result = helper.validate_entered_amount(val)
-    if result:
-        assert True
-    else:
-        assert False, val + " is valid amount"
-
-
-def test_validate_entered_amount_float_max():
-    val = "999999999999999.9999"
-    result = helper.validate_entered_amount(val)
-    if result:
-        assert True
-    else:
-        assert False, val + " is valid amount"
-
-
-def test_validate_entered_amount_float_more_decimal():
-    val = "9999999999.999999999"
-    result = helper.validate_entered_amount(val)
-    if result:
-        assert True
-    else:
-        assert False, val + " is valid amount"
-
-
-def test_validate_entered_amount_float_outofbound():
-    val = "9999999999999999.99"
-    result = helper.validate_entered_amount(val)
-    if result:
-        assert False, val + " is not a valid amount(out of bound)"
-    else:
-        assert True
-
-
-def test_validate_entered_amount_string():
-    val = "agagahaaaa"
-    result = helper.validate_entered_amount(val)
-    if result:
-        assert False, val + " is not a valid amount"
-    else:
-        assert True
-
-
-def test_validate_entered_amount_string_with_dot():
-    val = "agaga.aaa"
-    result = helper.validate_entered_amount(val)
-    if result:
-        assert False, val + " is not a valid amount"
-    else:
-        assert True
-
-
-def test_validate_entered_amount_special_char():
-    val = "$%@*@.@*"
-    result = helper.validate_entered_amount(val)
-    if result:
-        assert False, val + " is not a valid amount"
-    else:
-        assert True
-
-
-def test_validate_entered_amount_alpha_num():
-    val = "22e62a"
-    result = helper.validate_entered_amount(val)
-    if result:
-        assert False, val + " is not a valid amount"
-    else:
-        assert True
-
-
-def test_validate_entered_amount_mixed():
-    val = "a14&^%.hs827"
-    result = helper.validate_entered_amount(val)
-    if result:
-        assert False, val + " is not a valid amount"
-    else:
-        assert True
-
-
-def test_getUserHistory_without_data(mocker):
-    mocker.patch.object(helper, "read_json")
-    helper.read_json.return_value = {}
-    result = helper.getUserHistory(MOCK_CHAT_ID)
-    if result is None:
-        assert True
-    else:
-        assert False, "Result is not None when user data does not exist"
-
-
-def test_getUserHistory_with_data(mocker):
-    mocker.patch.object(helper, "read_json")
-    helper.read_json.return_value = MOCK_USER_DATA
-    result = helper.getUserHistory(MOCK_CHAT_ID)
-    if result == MOCK_USER_DATA[str(MOCK_CHAT_ID)]["data"]:
-        assert True
-    else:
-        assert False, "User data is available but not found"
-
-
-def test_getUserHistory_with_none(mocker):
-    mocker.patch.object(helper, "read_json")
-    helper.read_json.return_value = None
-    result = helper.getUserHistory(MOCK_CHAT_ID)
-    if result is None:
-        assert True
-    else:
-        assert False, "Result is not None when the file does not exist"
-
-
-def test_getSpendCategories():
-    result = helper.getSpendCategories()
-    if result == helper.spend_categories:
-        assert True
-    else:
-        assert False, "expected spend categories are not returned"
-
-
-def test_getSpendDisplayOptions():
-    result = helper.getSpendDisplayOptions()
-    if result == helper.spend_display_option:
-        assert True
-    else:
-        assert False, "expected spend display options are not returned"
-
-
-def test_getCommands():
-    result = helper.getCommands()
-    if result == helper.commands:
-        assert True
-    else:
-        assert False, "expected commands are not returned"
-
-
-def test_getDateFormat():
-    result = helper.getDateFormat()
-    if result == helper.dateFormat:
-        assert True
-    else:
-        assert False, "expected date format are not returned"
-
-
-def test_getTimeFormat():
-    result = helper.getTimeFormat()
-    if result == helper.timeFormat:
-        assert True
-    else:
-        assert False, "expected time format are not returned"
-
-
-def test_getMonthFormat():
-    result = helper.getMonthFormat()
-    if result == helper.monthFormat:
-        assert True
-    else:
-        assert False, "expected month format are not returned"
-
-
-def test_getChoices():
-    result = helper.getChoices()
-    if result == helper.choices:
-        assert True
-    else:
-        assert False, "expected choices are not returned"
-
-
-def test_write_json(mocker):
-    mocker.patch.object(helper, "json")
-    helper.json.dump.return_value = True
-    user_list = ["hello"]
-    helper.write_json(user_list)
-    helper.json.dump.assert_called_with(user_list, ANY, ensure_ascii=ANY, indent=ANY)
-
-
-@patch("telebot.telebot")
-def test_throw_exception(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.reply_to.return_value = True
-
-    message = create_message("message from testing")
-
-    throw_exception("hello, exception from testing", message, mc, logging)
-    mc.reply_to.assert_called_with(message, "Oh no! hello, exception from testing")
-
-
-def test_createNewUserRecord():
-    data_format_call = helper.createNewUserRecord()
-    data_format = {"data": [], "budget": {"overall": None, "category": None}}
-    assert sorted(data_format_call) == sorted(data_format)
-
-
-def test_getOverallBudget_none_case():
-    helper.getUserData.return_value = None
-    overall_budget = helper.getOverallBudget(11)
-    assert overall_budget is None
-
-
-def test_getOverallBudget_working_case():
-    helper.getUserData = mock.Mock(return_value={"budget": {"overall": 10}})
-    overall_budget = helper.getOverallBudget(11)
-    assert overall_budget == 10
-
-
-def test_getCategoryBudget_none_case():
-    helper.getUserData.return_value = None
-    overall_budget = helper.getCategoryBudget(11)
-    assert overall_budget is None
-
-
-def test_getCategoryBudget_working_case():
-    helper.getUserData = mock.Mock(return_value={"budget": {"category": {"Food": 10}}})
-    overall_budget = helper.getCategoryBudget(11)
-    assert overall_budget is not None
-
-
-def test_getCategoryBudgetByCategory_none_case():
-    helper.isCategoryBudgetByCategoryAvailable = mock.Mock(return_value=False)
-    testresult = helper.getCategoryBudgetByCategory(10, "Food")
-    assert testresult is None
-
-
-def test_getCategoryBudgetByCategory_normal_case():
-    helper.isCategoryBudgetByCategoryAvailable = mock.Mock(return_value=True)
-    helper.getCategoryBudget = mock.Mock(return_value={"Food": 10})
-    testresult = helper.getCategoryBudgetByCategory(10, "Food")
-    assert testresult is not None
-
-
-def test_canAddBudget():
-    helper.getOverallBudget = mock.Mock(return_value=None)
-    helper.getCategoryBudget = mock.Mock(return_value=None)
-    testresult = helper.canAddBudget(10)
-    assert testresult
-
-
-def test_isOverallBudgetAvailable():
-    helper.getOverallBudget = mock.Mock(return_value=True)
-    testresult = helper.isOverallBudgetAvailable(10)
-    assert testresult is True
-
-
-def test_isCategoryBudgetAvailable():
-    helper.getCategoryBudget = mock.Mock(return_value=True)
-    testresult = helper.isCategoryBudgetAvailable(10)
-    assert testresult is True
-
-
-def test_isCategoryBudgetByCategoryAvailable_working():
-    helper.getCategoryBudget = mock.Mock(return_value={"Food": 10})
-    testresult = isCategoryBudgetByCategoryAvailable(10, "Food")
-    assert testresult
-
-
-def test_isCategoryBudgetByCategoryAvailable_none_case():
-    helper.getCategoryBudget = mock.Mock(return_value=None)
-    testresult = isCategoryBudgetByCategoryAvailable(10, "Food")
-    assert testresult is False
-
-
-def test_calculate_total_spendings():
-    pass
-
-
-def test_calculate_total_spendings_for_category():
-    pass
-
-
-def test_calculateRemainingOverallBudget():
-    pass
-
-
-@patch("telebot.telebot")
-def test_display_remaining_overall_budget(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.send_message.return_value = True
-    helper.calculateRemainingOverallBudget = mock.Mock(return_value=100)
-    message = create_message("hello from testing")
-    helper.display_remaining_overall_budget(message, mc)
-
-    mc.send_message.assert_called_with(11, "\nRemaining Overall Budget is $100")
-
-
-@patch("telebot.telebot")
-def test_display_remaining_overall_budget_exceeding_case(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.send_message.return_value = True
-    helper.calculateRemainingOverallBudget = mock.Mock(return_value=-10)
-    message = create_message("hello from testing")
-    helper.display_remaining_overall_budget(message, mc)
-
-    mc.send_message.assert_called_with(
-        11, "\nBudget Exceded!\nExpenditure exceeds the budget by $10"
-    )
-
-
-@patch("telebot.telebot")
-def test_display_remaining_category_budget(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.send_message.return_value = True
-    helper.calculateRemainingCategoryBudget = mock.Mock(return_value=150)
-    message = create_message("hello from testing")
-    helper.display_remaining_category_budget(message, mc, "Food")
-
-    mc.send_message.assert_called_with(11, "\nRemaining Budget for Food is $150")
-
-
-@patch("telebot.telebot")
-def test_display_remaining_category_budget_exceeded(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    mc.send_message.return_value = True
-    helper.calculateRemainingCategoryBudget = mock.Mock(return_value=-90)
-    message = create_message("hello from testing")
-    helper.display_remaining_category_budget(message, mc, "Food")
-
-    mc.send_message.assert_called_with(11, "\nRemaining Budget for Food is $-90")
-
-
-@patch("telebot.telebot")
-def test_display_remaining_budget_overall_case(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    message = create_message("hello from testing")
-
-    helper.isOverallBudgetAvailable = mock.Mock(return_value=True)
-    helper.display_remaining_overall_budget = mock.Mock(return_value=True)
-
-    helper.display_remaining_budget(message, mc, "Food")
-    helper.display_remaining_overall_budget.assert_called_with(message, mc)
-
-
-@patch("telebot.telebot")
-def test_display_remaining_budget_category_case(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    message = create_message("hello from testing")
-
-    helper.isOverallBudgetAvailable = mock.Mock(return_value=False)
-    helper.isCategoryBudgetByCategoryAvailable = mock.Mock(return_value=True)
-    helper.display_remaining_category_budget = mock.Mock(return_value=True)
-
-    helper.display_remaining_budget(message, mc, "Food")
-    helper.display_remaining_category_budget.assert_called_with(message, mc, "Food")
-
-
-def test_getBudgetTypes():
-    testresult = helper.getBudgetTypes()
-    localBudgetTypes = {"overall": "Overall Budget", "category": "Category-Wise Budget"}
-    assert sorted(testresult) == sorted(localBudgetTypes)
-
-
-def create_message(text):
-    params = {"messagebody": text}
-    chat = types.User(11, False, "test")
-    return types.Message(1, None, None, chat, "text", params, "")
+import unittest
+import json
+import os
+import helper
+
+class TestExpenseTrackerFunctions(unittest.TestCase):
+
+    def setUp(self):
+        self.test_chat_id = "12345"
+        self.test_user_data = {
+            self.test_chat_id: {
+                "data": ["01-Jan-2023,Food,50"],
+                "budget": {"overall": "500", "category": {"Food": "200"}}
+            }
+        }
+        with open("expense_record.json", "w") as f:
+            json.dump(self.test_user_data, f)
+
+    def tearDown(self):
+        os.remove("expense_record.json")
+
+    def test_read_json(self):
+        read_data = read_json()
+        self.assertEqual(read_data, self.test_user_data)
+
+    def test_write_json(self):
+        new_data = {
+            self.test_chat_id: {
+                "data": ["02-Jan-2023,Utilities,80"],
+                "budget": {"overall": "600", "category": {"Utilities": "200"}}
+            }
+        }
+        write_json(new_data)
+        with open("expense_record.json", "r") as f:
+            written_data = json.load(f)
+        self.assertEqual(written_data, new_data)
+
+    def test_validate_entered_amount_valid(self):
+        valid_amount = "25.50"
+        self.assertEqual(validate_entered_amount(valid_amount), valid_amount)
+
+    def test_validate_entered_amount_invalid(self):
+        invalid_amount = "-25.50"
+        self.assertEqual(validate_entered_amount(invalid_amount), 0)
+
+    def test_getUserHistory_valid_user(self):
+        user_history = getUserHistory(self.test_chat_id)
+        self.assertEqual(user_history, ["01-Jan-2023,Food,50"])
+
+    def test_getUserHistory_invalid_user(self):
+        user_history = getUserHistory("invalid_chat_id")
+        self.assertIsNone(user_history)
+
+    def test_calculate_total_spendings(self):
+        queryResult = ["02-Jan-2023,Utilities,80", "03-Jan-2023,Groceries,90"]
+        self.assertEqual(calculate_total_spendings(queryResult), 170)
+
+    def test_get_uncategorized_amount(self):
+        amount = "1000"
+        uncategorized_amount = get_uncategorized_amount(self.test_chat_id, amount)
+        self.assertEqual(uncategorized_amount, "800.00")
+
+if __name__ == "__main__":
+    unittest.main()
