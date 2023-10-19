@@ -27,7 +27,7 @@
 | **Collaboration**                  |                                                              |        |
 | The files CONTRIBUTING.md lists coding standards and lots of tips on how to extend the system without screwing things up |https://github.com/aditikilledar/dollar_bot_SE23/blob/main/CONTRIBUTING.md |3 |
 | Issues are discussed before they are closed - even if you discuss in slack, need a summary statement here |   | 0
-| Chat channel: exists - Link or screenshots |                     | 0     |
+| Chat channel: exists - Link or screenshots |https://drive.google.com/drive/folders/1yVlqYdZ3ZScGU9_xKBDtW26CA2zcaObO?usp=sharing                | 0     |
 | Test cases: a large proportion of the issues related to handling failing cases. If a test case fails, open an issue and fix it |  | 2
 | Evidence that the whole team is using the same tools: everyone can get to all tools and files |  | 3
 | Evidence that the whole team is using the same tools (e.g. config files in the repo, updated by lots of different people) |  | 0
