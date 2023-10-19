@@ -1,7 +1,7 @@
 | Criteria                           | Description                                                      | Rating |
 |------------------------------------|------------------------------------------------------------------|--------|
 | **Video**                          |  | 2      |
-| **Workload Distribution**          |  | 3      |
+| **Workload Distribution**          | Workload is spread over the whole team  | 3      |
 | **GitHub Evidence**                |                                                              |        |
 | Number of commits in GH           | https://github.com/usmanwardag/dollar_bot/compare/main...aditikilledar:dollar_bot_SE23:Project2-Rubric-1                                                                 | 3      |
 | Number of commits by different people in GH |  https://github.com/usmanwardag/dollar_bot/compare/main...aditikilledar:dollar_bot_SE23:Project2-Rubric-1                                                    | 3      |
