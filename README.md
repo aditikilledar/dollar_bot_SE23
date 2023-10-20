@@ -22,7 +22,7 @@ Are you a developer? <a href="https://github.com/aditikilledar/dollar_bot_SE23/b
 
 [![GitHub contributors](https://img.shields.io/github/contributors/aditikilledar/dollar_bot_SE23)](https://github.com/aditikilledar/dollar_bot_SE23/graphs/contributors)
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5759217.svg)](https://doi.org/10.5281/zenodo.5759217)
+[![DOI](https://zenodo.org/badge/691334031.svg)](https://zenodo.org/doi/10.5281/zenodo.10023639)
 
 [![Build Status](https://app.travis-ci.com/usmanwardag/dollar_bot.svg?branch=main)](https://app.travis-ci.com/usmanwardag/dollar_bot)
 
