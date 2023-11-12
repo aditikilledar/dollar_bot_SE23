@@ -51,7 +51,8 @@ def enter_updated_data(m, bot, selected_data, updated):
         bot.send_message(m.chat.id, f"Select {LSTEP[step]}", reply_markup=calendar)
 
         @bot.callback_query_handler(func=DetailedTelegramCalendar.func())
-        def cal(c):
+        def edit_cal(c):
+            chat_id= c.message.chat.id
             result, key, step = DetailedTelegramCalendar().process(c.data)
 
             if not result and key:
@@ -62,12 +63,16 @@ def enter_updated_data(m, bot, selected_data, updated):
                     reply_markup=key,
                 )
             elif result:
-                edit_date(bot, selected_data, result, c, updated)
-                bot.edit_message_text(
-                    f"Date is updated: {result}",
-                    c.message.chat.id,
-                    c.message.message_id,
-                )
+                data = datetime.today().date()
+                if (result > data):
+                    bot.send_message(chat_id,"Cannot select future dates, Please try /edit command again with correct dates")
+                else:
+                    edit_date(bot, selected_data, result, c, updated)
+                    bot.edit_message_text(
+                        f"Date is updated: {result}",
+                        c.message.chat.id,
+                        c.message.message_id,
+                    )
 
     if "Category" in choice1:
         new_cat = bot.reply_to(m, "Please select the new category", reply_markup=markup)

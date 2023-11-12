@@ -30,6 +30,7 @@ commands = {
        \n 1. It will give you the list of categories to choose from. \
        \n 2. You will be prompted to enter the amount corresponding to your spending \
        \n 3.The message will be prompted to notify the addition of your expense with the amount,date, time and category ",
+    "add_recurring": "This option is to add a recurring expense for future months",
     "analytics": "This option gives user a graphical representation of their expenditures \
         \n You will get an option to choose the type of data you want to see.",
     "predict": "This option analyzes your recorded spendings and gives you a budget that will accommodate for them.",
@@ -91,6 +92,15 @@ def validate_entered_amount(amount_entered):
         amount = round(float(amount_entered), 2)
         if amount > 0:
             return str(amount)
+    return 0
+
+def validate_entered_duration(duration_entered):
+    if duration_entered is None:
+        return 0
+    if re.match("^[1-9][0-9]{0,14}", duration_entered):
+        duration = int(duration_entered)
+        if duration > 0:
+            return str(duration)
     return 0
 
 def getUserHistory(chat_id):

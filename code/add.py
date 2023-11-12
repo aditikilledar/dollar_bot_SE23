@@ -1,7 +1,8 @@
 import helper
 import logging
 from telebot import types
-from datetime import datetime
+from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
+from datetime import datetime,date
 
 option = {}
 
@@ -16,19 +17,42 @@ def run(message, bot):
     and bot which is the telegram bot object from the main code.py function.
     """
     helper.read_json()
-    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-    markup.row_width = 2
     chat_id = message.chat.id
-    expense_history = helper.getUserHistory(chat_id)
-    if expense_history:
-        recur_msg = bot.send_message(chat_id,"You have previously recorded expenses. Do you want to repeat one of these expenses?(Y/N)")
-        bot.register_next_step_handler(recur_msg, record_expense, bot, expense_history)
-    else:
+    message = bot.send_message(chat_id, "Select date")
+    calendar, step = DetailedTelegramCalendar().build()
+    bot.send_message(chat_id, f"Select {LSTEP[step]}", reply_markup=calendar)
+    date = datetime.today()
+    @bot.callback_query_handler(func=DetailedTelegramCalendar.func())
+    def cal(c):
+        chat_id = c.message.chat.id
+        result, key, step = DetailedTelegramCalendar().process(c.data)
+
+        if not result and key:
+            bot.edit_message_text(
+                f"Select {LSTEP[step]}",
+                chat_id,
+                c.message.message_id,
+                reply_markup=key,
+            )
+        elif result:
+            data = datetime.today().date()
+            if (result > data):
+                bot.send_message(chat_id,"Cannot select future dates, Please try /add command again with correct dates")
+            else:
+                category_selection(message,bot,result)
+
+def category_selection(msg,bot,date):
+    try:
+        # print(date)
+        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+        markup.row_width = 2
         for c in helper.getSpendCategories():
             markup.add(c)
         markup.add("Add new category")
-        msg = bot.reply_to(message, "Select Category", reply_markup=markup)
-        bot.register_next_step_handler(msg, post_category_selection, bot)
+        msg = bot.reply_to(msg, "Select Category", reply_markup=markup)
+        bot.register_next_step_handler(msg, post_category_selection, bot, date)
+    except:
+        print(Exception)
 
 def post_append_spend(message, bot):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
@@ -44,7 +68,7 @@ def post_append_spend(message, bot):
     msg = bot.reply_to(message, "Select Category", reply_markup=markup)
     bot.register_next_step_handler(msg, post_category_selection, bot)
 
-def post_category_selection(message, bot):
+def post_category_selection(message, bot, date):
     """
     post_category_selection(message, bot): It takes 2 arguments for processing -
     message which is the message from the user, and bot which is the telegram bot object
@@ -69,7 +93,7 @@ def post_category_selection(message, bot):
             option[chat_id] = selected_category
             message = bot.send_message(
                 chat_id, "How much did you spend on {}? \n(Numeric values only)".format(str(option[chat_id])),)
-            bot.register_next_step_handler(message, post_amount_input, bot, selected_category)
+            bot.register_next_step_handler(message, post_amount_input, bot, selected_category, date)
     except Exception as e:
         logging.exception(str(e))
         bot.reply_to(message, "Oh no! " + str(e))
@@ -82,58 +106,8 @@ def post_category_selection(message, bot):
         bot.send_message(chat_id, "Please select a menu option from below:")
         bot.send_message(chat_id, display_text)
 
-def record_expense(message, bot, previous_expenses):
-    print("In function to record expense")
-    selection = message.text
-    print(selection)
-    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-    markup.row_width = 2
-    if selection == "Y" or selection == "y":
-        for record in previous_expenses:
-            markup.add(record)
-        msg = bot.reply_to(message, "Select the expense you want to repeat", reply_markup=markup)
-        bot.register_next_step_handler(msg, post_expense_selection, bot)
-    else:
-        for c in helper.getSpendCategories():
-            markup.add(c)
-        markup.add("Add new category")
-        msg = bot.reply_to(message, "Select Category", reply_markup=markup)
-        bot.register_next_step_handler(msg, post_category_selection, bot)
 
-def post_expense_selection(message,bot):
-    chat_id = message.chat.id
-    expense_record = message.text
-    expense_data = expense_record.split(",")
-    amount = expense_data[2]
-    category = expense_data[1]
-    print(amount)
-    amount_value = helper.validate_entered_amount(amount)  # validate
-    try:
-        if amount_value == 0:  # cannot be $0 spending
-            raise Exception("Spent amount has to be a non-zero number.")
-        date_of_entry = datetime.today().strftime(helper.getDateFormat())
-        date_str, category_str, amount_str = (
-            str(date_of_entry),
-            str(category),
-            str(amount_value),
-        )
-        helper.write_json(
-            add_user_record(
-                chat_id, "{},{},{}".format(date_str, category_str, amount_str)
-            )
-        )
-        bot.send_message(
-            chat_id,
-            "The following expenditure has been recorded: You have spent ${} for {} on {}".format(
-                amount_str, category_str, date_str
-            ),
-        )
-        helper.display_remaining_budget(message, bot, category)
-    except Exception as e:
-        logging.exception(str(e))
-        bot.reply_to(message, "Oh no. " + str(e))
-
-def post_amount_input(message, bot, selected_category):
+def post_amount_input(message, bot, selected_category, date):
     """
     post_amount_input(message, bot): It takes 2 arguments for processing -
     message which is the message from the user, and bot which is the telegram bot
@@ -144,17 +118,13 @@ def post_amount_input(message, bot, selected_category):
     try:
         print("---------------------------------------------------")
         chat_id = message.chat.id
-        print(chat_id)
         amount_entered = message.text
-        print("0000000000000000000000000000000000000000000000000")
-        print(amount_entered)
-        print(selected_category)
         amount_value = helper.validate_entered_amount(amount_entered)  # validate
         if amount_value == 0:  # cannot be $0 spending
             raise Exception("Spent amount has to be a non-zero number.")
 
-        date_of_entry = datetime.today().strftime(
-            helper.getDateFormat())
+        date_of_entry = date.strftime(helper.getDateFormat())
+        print(date_of_entry,"date after")
         date_str, category_str, amount_str = (
             str(date_of_entry),
             str(option[chat_id]),
@@ -183,16 +153,9 @@ def add_user_record(chat_id, record_to_be_added):
     is the expense record to be added to the store. It then stores this expense record in the store.
     """
     user_list = helper.read_json()
-    print("!" * 5)
-    print("before")
-    print(user_list)
-    print("!" * 5)
     if str(chat_id) not in user_list:
         user_list[str(chat_id)] = helper.createNewUserRecord()
 
     user_list[str(chat_id)]["data"].append(record_to_be_added)
-    print("!" * 5)
-    print("after")
     print(user_list)
-    print("!" * 5)
     return user_list
