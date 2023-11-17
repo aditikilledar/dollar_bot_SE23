@@ -51,7 +51,7 @@ def test_post_amount_input_working(mock_telebot, mocker):
     mc = mock_telebot.return_value
     mc.send_message.return_value = True
 
-    message = create_message("hello from testing!")
+    message = create_message("120")
     add.post_amount_input(message, mc, "Food", date)
     assert mc.send_message.called
 
