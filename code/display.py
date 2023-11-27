@@ -1,4 +1,32 @@
+"""
+File: display.py
+Author: Vyshnavi Adusumelli, Tejaswini Panati, Harshavardhan Bandaru
+Date: October 01, 2023
+Description: File contains Telegram bot message handlers and their associated functions.
+
+Copyright (c) 2023
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 import time
+from tabulate import tabulate
 import helper
 import graphing
 import logging
@@ -72,7 +100,7 @@ def display_total(message, bot):
             queryResult = [
                 value for index, value in enumerate(history) if str(query) in value
             ]
-        total_text = calculate_spendings(queryResult)
+        total_text, total_dict = calculate_spendings(queryResult)
         monthly_budget = helper.getCategoryBudget(chat_id)
         print("Print Total Spending", total_text)
         print("Print monthly budget", monthly_budget)
@@ -82,9 +110,13 @@ def display_total(message, bot):
             spending_text = "You have no spendings for {}!".format(DayWeekMonth)
             bot.send_message(chat_id, spending_text)
         else:
-            spending_text = "Here are your total spendings {}:\nCATEGORIES,AMOUNT \n----------------------\n{}".format(
-                DayWeekMonth.lower(), total_text
-            )
+            table = [["Category", "Amount"]]
+            spending_text = "Here are your total spendings {}".format(DayWeekMonth.lower())
+            for category, amount in total_dict.items():
+                table.append([str(category), "$ " + str(amount)])
+            spend_total_str="<pre>"+ tabulate(table, headers='firstrow')+"</pre>"
+            bot.send_message(chat_id, spending_text)
+            bot.send_message(chat_id, spend_total_str, parse_mode="HTML")
             graphing.visualize(total_text, monthly_budget)
             bot.send_photo(chat_id, photo=open("expenditure.png", "rb"))
     except Exception as e:
@@ -112,4 +144,4 @@ def calculate_spendings(queryResult):
     total_text = ""
     for key, value in total_dict.items():
         total_text += str(key) + " $" + str(value) + "\n"
-    return total_text
+    return total_text, total_dict

@@ -1,23 +1,52 @@
+"""
+File: test_add.py
+Author: Vyshnavi Adusumelli, Tejaswini Panati, Harshavardhan Bandaru
+Date: October 01, 2023
+Description: File contains Telegram bot message handlers and their associated functions.
+
+Copyright (c) 2023
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 import os
 import json
 from mock.mock import patch
 from telebot import types
 from code import add
 from mock import ANY
+from datetime import datetime
 
 
 dateFormat = "%d-%b-%Y"
 timeFormat = "%H:%M"
 monthFormat = "%b-%Y"
-
+date = datetime.today().date()
 
 @patch("telebot.telebot")
 def test_run(mock_telebot, mocker):
     mc = mock_telebot.return_value
-    mc.reply_to.return_value = True
+    mc.send_message.return_value = True
+
     message = create_message("hello from test run!")
     add.run(message, mc)
-    assert mc.reply_to.called
+    assert mc.send_message.called
 
 
 @patch("telebot.telebot")
@@ -26,7 +55,7 @@ def test_post_category_selection_working(mock_telebot, mocker):
     mc.send_message.return_value = True
 
     message = create_message("hello from testing!")
-    add.post_category_selection(message, mc)
+    add.post_category_selection(message, mc, date)
     assert mc.send_message.called
 
 
@@ -40,7 +69,7 @@ def test_post_category_selection_noMatchingCategory(mock_telebot, mocker):
     add.helper.getSpendCategories.return_value = None
 
     message = create_message("hello from testing!")
-    add.post_category_selection(message, mc)
+    add.post_category_selection(message, mc, date)
     assert mc.reply_to.called
 
 
@@ -49,8 +78,8 @@ def test_post_amount_input_working(mock_telebot, mocker):
     mc = mock_telebot.return_value
     mc.send_message.return_value = True
 
-    message = create_message("hello from testing!")
-    add.post_category_selection(message, mc)
+    message = create_message("120")
+    add.post_amount_input(message, mc, "Food", date)
     assert mc.send_message.called
 
 
@@ -68,7 +97,7 @@ def test_post_amount_input_working_withdata(mock_telebot, mocker):
     add.option.return_value = {11, "here"}
 
     message = create_message("hello from testing!")
-    add.post_amount_input(message, mc, "Food")
+    add.post_amount_input(message, mc, "Food", date)
     assert mc.send_message.called
 
 
@@ -80,8 +109,8 @@ def test_post_amount_input_nonworking(mock_telebot, mocker):
     mocker.patch.object(add, "helper")
     add.helper.validate_entered_amount.return_value = 0
     message = create_message("hello from testing!")
-    add.post_amount_input(message, mc, "Food")
-    assert mc.reply_to.called
+    add.post_amount_input(message, mc, "Food",date)
+    assert mc.send_message.called
 
 
 @patch("telebot.telebot")
@@ -101,7 +130,7 @@ def test_post_amount_input_working_withdata_chatid(mock_telebot, mocker):
     add.option = test_option
 
     message = create_message("hello from testing!")
-    add.post_amount_input(message, mc, "Food")
+    add.post_amount_input(message, mc, "Food", date)
     assert mc.send_message.called
     # assert mc.send_message.called_with(11, ANY)
 

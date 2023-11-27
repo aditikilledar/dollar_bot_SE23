@@ -4,7 +4,7 @@ Follow the set of guidelines below to contribute to DollarBot!
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by the [Code of Conduct](https://github.com/aditikilledar/dollar_bot_SE23/blob/main/CODE_OF_CONDUCT.md). By participating, you are expected to upload this code. Please report unacceptable behavior to akilled@ncsu.edu.
+This project and everyone participating in it is governed by the [Code of Conduct](https://github.com/tpanati/DollarBot/blob/main/CODE_OF_CONDUCT.md). By participating, you are expected to upload this code. Please report unacceptable behavior to akilled@ncsu.edu.
 
 Note that this project is created as part of CSC 510 Coursework at NC State University for Fall'23.
 
@@ -43,7 +43,7 @@ A cursory search is necessary to check if the reported bug is already mentioned 
 
 
 ## To Submit A Good Bug Report
-[GitHub issues](https://github.com/aditikilledar/dollar_bot_SE23/issues) You can track the bugs from this. For the repository that has bug, create an issue and fill out [this template](https://github.com/atom/.github/blob/master/.github/ISSUE_TEMPLATE/bug_report.md) or our in-repo template to give details of the bug.
+[GitHub issues](https://github.com/tpanati/DollarBot/issues) You can track the bugs from this. For the repository that has bug, create an issue and fill out [this template](https://github.com/atom/.github/blob/master/.github/ISSUE_TEMPLATE/bug_report.md) or our in-repo template to give details of the bug.
 
 
 * To identify the problem, give the issue a clear and informative term. <br>
@@ -72,7 +72,7 @@ Check out this [debugging guide](https://flight-manual.atom.io/hacking-atom/sect
 
 ## To Submit A Good Enhancement Suggestion
 
-[GitHub issues](https://github.com/aditikilledar/dollar_bot_SE23/issues) You can track the bugs from this. For the repository that has bug, create an issue and fill out [the template](https://github.com/atom/.github/blob/master/.github/ISSUE_TEMPLATE/bug_report.md or our in-repo enhancement template to give details of the bug.
+[GitHub issues](https://github.com/tpanati/DollarBot/issues) You can track the bugs from this. For the repository that has bug, create an issue and fill out [the template](https://github.com/atom/.github/blob/master/.github/ISSUE_TEMPLATE/bug_report.md or our in-repo enhancement template to give details of the bug.
 
 * To identify the problem, give the issue a clear and informative term. <br>
 * Describe in as much detail as possible to duplicate the problem. Explain the problem and explain about the exact command sused in the terminal which caus ethe bug to occur.

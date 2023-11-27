@@ -134,3 +134,4 @@ dmypy.json
 # Generated files
 expense_record.json
 user.properties
+data/

@@ -1,3 +1,30 @@
+"""
+File: budget_update.py
+Author: Vyshnavi Adusumelli, Tejaswini Panati, Harshavardhan Bandaru
+Date: October 01, 2023
+Description: File contains Telegram bot message handlers and their associated functions.
+
+Copyright (c) 2023
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 import helper
 import logging
 import budget_view
@@ -11,6 +38,7 @@ def run(message, bot):
     It takes 2 arguments for processing - message which is the message from the user, and bot which
     is the telegram bot object from the main code.py function.
     """
+    helper.read_category_json()
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
     options = helper.getBudgetTypes()
     markup.row_width = 2
@@ -63,7 +91,7 @@ def update_overall_budget(chat_id, bot):
 
 def post_overall_amount_input(message, bot):
     """
-    update_overall_budget(message, bot): It takes 2 arguments for processing -
+    post_overall_budget(message, bot): It takes 2 arguments for processing -
     message which is the message from the user, and bot which is the telegram bot object.
     This function is called when the user wants to either create a new overall budget or
     update an existing one. It checks if there is an existing budget through the helper module's
@@ -164,10 +192,22 @@ def post_category_selection(message, bot):
         helper.throw_exception(e, message, bot, logging)
 
 def add_new_category(message,bot):
+
+    """
+    add_new_category(message, bot): Adds a new spending category based on the user's input.
+
+    Parameters:
+    - message (telegram.Message): The message object received from the user.
+    - bot (telegram.Bot): The Telegram bot object.
+
+    This function adds the new spending category provided by the user, updates the available categories, and
+    prompts the user to select a category from the updated list.
+    """
+
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
     markup.row_width = 2
     new_category = message.text
-    helper.spend_categories.append(new_category)
+    helper.addSpendCategories(new_category)
     for c in helper.getSpendCategories():
         markup.add(c)
     msg = bot.reply_to(message, "Select Category", reply_markup=markup)
@@ -194,8 +234,8 @@ def post_category_amount_input(message, bot, category):
             chat_id, "Budget for " + category + " is now: $" + amount_value
         )
         if helper.isCategoryBudgetByCategoryAvailable(chat_id, category):
-                currentBudget = helper.getCategoryBudgetByCategory(chat_id, category)
-                amount_value = str(float(amount_value) - float(currentBudget))
+            currentBudget = helper.getCategoryBudgetByCategory(chat_id, category)
+            amount_value = str(float(amount_value) - float(currentBudget))
         if(user_list[str(chat_id)]["budget"]["overall"]) and user_list[str(chat_id)]["budget"]["overall"] != '0':
             if 'uncategorized' in user_list[str(chat_id)]["budget"]["category"].keys():
                 if round(float(user_list[str(chat_id)]["budget"]["category"]["uncategorized"]) - float(amount_value),2) > 0:

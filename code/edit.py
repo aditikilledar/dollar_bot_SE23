@@ -1,3 +1,30 @@
+"""
+File: edit.py
+Author: Vyshnavi Adusumelli, Tejaswini Panati, Harshavardhan Bandaru
+Date: October 01, 2023
+Description: File contains Telegram bot message handlers and their associated functions.
+
+Copyright (c) 2023
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 import helper
 from telebot import types
 from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
@@ -29,6 +56,18 @@ def run(m, bot):
     bot.register_next_step_handler(info, select_category_to_be_updated, bot)
 
 def select_category_to_be_updated(m, bot):
+
+    """
+    select_category_to_be_updated(m, bot): Handles the user's selection of expense categories for updating.
+
+    Parameters:
+    - m (telegram.Message): The message object received from the user.
+    - bot (telegram.Bot): The Telegram bot object.
+
+    This function processes the user's selected expense categories, presents options for updating,
+    and registers the next step handler for further processing.
+    """
+
     info = m.text
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
     markup.row_width = 2
@@ -40,6 +79,20 @@ def select_category_to_be_updated(m, bot):
     bot.register_next_step_handler(choice, enter_updated_data, bot, selected_data, updated)
 
 def enter_updated_data(m, bot, selected_data, updated):
+
+    """
+    enter_updated_data(m, bot, selected_data, updated): Handles the user's input for updating expense information.
+
+    Parameters:
+    - m (telegram.Message): The message object received from the user.
+    - bot (telegram.Bot): The Telegram bot object.
+    - selected_data (list): List of selected expense information.
+    - updated (list): List of updated categories.
+
+    This function processes the user's choice for updating expense details and registers the next step handlers
+    accordingly (date, category, amount).
+    """
+
     choice1 = "" if m.text is None else m.text
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
     markup.row_width = 2
@@ -51,7 +104,8 @@ def enter_updated_data(m, bot, selected_data, updated):
         bot.send_message(m.chat.id, f"Select {LSTEP[step]}", reply_markup=calendar)
 
         @bot.callback_query_handler(func=DetailedTelegramCalendar.func())
-        def cal(c):
+        def edit_cal(c):
+            chat_id= c.message.chat.id
             result, key, step = DetailedTelegramCalendar().process(c.data)
 
             if not result and key:
@@ -62,12 +116,16 @@ def enter_updated_data(m, bot, selected_data, updated):
                     reply_markup=key,
                 )
             elif result:
-                edit_date(bot, selected_data, result, c, updated)
-                bot.edit_message_text(
-                    f"Date is updated: {result}",
-                    c.message.chat.id,
-                    c.message.message_id,
-                )
+                data = datetime.today().date()
+                if (result > data):
+                    bot.send_message(chat_id,"Cannot select future dates, Please try /edit command again with correct dates")
+                else:
+                    edit_date(bot, selected_data, result, c, updated)
+                    bot.edit_message_text(
+                        f"Date is updated: {result}",
+                        c.message.chat.id,
+                        c.message.message_id,
+                    )
 
     if "Category" in choice1:
         new_cat = bot.reply_to(m, "Please select the new category", reply_markup=markup)
@@ -80,6 +138,19 @@ def enter_updated_data(m, bot, selected_data, updated):
         bot.register_next_step_handler(new_cost, edit_cost, bot, selected_data, updated)
 
 def update_different_category(m, bot, selected_data, updated):
+
+    """
+    update_different_category(m, bot, selected_data, updated): Handles user's choice to update another category.
+
+    Parameters:
+    - m (telegram.Message): The message object received from the user.
+    - bot (telegram.Bot): The Telegram bot object.
+    - selected_data (list): List of selected expense information.
+    - updated (list): List of updated categories.
+
+    This function processes the user's choice to update another category and registers the next step handlers accordingly.
+    """
+
     response = m.text
     if response == "Y" or response == "y":
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)

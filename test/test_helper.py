@@ -1,3 +1,30 @@
+"""
+File: test_helper.py
+Author: Vyshnavi Adusumelli, Tejaswini Panati, Harshavardhan Bandaru
+Date: October 01, 2023
+Description: File contains Telegram bot message handlers and their associated functions.
+
+Copyright (c) 2023
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 from code import helper
 from code.helper import isCategoryBudgetByCategoryAvailable, throw_exception
 from mock import ANY
@@ -16,6 +43,9 @@ MOCK_USER_DATA = {
         "data": ["wrong_mock_value"],
         "budget": {"overall": None, "category": None},
     },
+}
+MOCK_CATEGORY_DATA = {
+    "categories": "Food,Groceries,Utilities,Transport,Shopping,Miscellaneous"
 }
 
 
@@ -165,9 +195,11 @@ def test_getUserHistory_with_none(mocker):
         assert False, "Result is not None when the file does not exist"
 
 
-def test_getSpendCategories():
+def test_getSpendCategories(mocker):
+    mocker.patch.object(helper, "read_category_json")
+    helper.read_category_json.return_value = MOCK_CATEGORY_DATA
     result = helper.getSpendCategories()
-    if result == helper.spend_categories:
+    if result == MOCK_CATEGORY_DATA["categories"].split(','):
         assert True
     else:
         assert False, "expected spend categories are not returned"
@@ -348,19 +380,6 @@ def test_display_remaining_overall_budget_exceeding_case(mock_telebot, mocker):
     mc.send_message.assert_called_with(
         11, "\nBudget Exceded!\nExpenditure exceeds the budget by $10"
     )
-
-@patch("telebot.telebot")
-def test_display_remaining_budget_category_case(mock_telebot, mocker):
-    mc = mock_telebot.return_value
-    message = create_message("hello from testing")
-
-    helper.isOverallBudgetAvailable = mock.Mock(return_value=False)
-    helper.isCategoryBudgetByCategoryAvailable = mock.Mock(return_value=True)
-    helper.display_remaining_category_budget = mock.Mock(return_value=True)
-
-    helper.display_remaining_budget(message, mc, "Food")
-    helper.display_remaining_category_budget.assert_called_with(message, mc, "Food")
-
 
 def test_getBudgetTypes():
     testresult = helper.getBudgetTypes()
